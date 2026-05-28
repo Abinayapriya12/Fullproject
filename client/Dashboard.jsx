@@ -23,7 +23,7 @@ function Dashboard() {
     navigate('/login');
   };
 
-  const isRegularUser = userRole === 'user';
+  const isRegularUser = userRole === 'student';
 
   return (
     <div className="min-h-screen">
@@ -82,6 +82,33 @@ function Dashboard() {
             </button>
           </div>
         </div>
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-blue-600 p-4 text-white">
+            <div className="flex items-center gap-3">
+              <FiUsers className="w-8 h-8" />
+              <h3 className="text-xl font-bold">Assignment Submission Portal</h3>
+            </div>
+          </div>
+          <div className="p-6 space-y-3">
+           
+            {!isRegularUser && (
+              <button
+                onClick={() => navigate('/createstudent')}
+                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+              >
+                uppload Assignments
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/getstudentdetails')}
+               className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+            >
+              View Assignments
+            </button>
+          </div>
+        </div>
+           
+
       </div>
     </div>
   );

@@ -1,58 +1,88 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react'
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-function Dashboard() {
+import axios from "axios";
+function Createbook() {
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState(null);
-  const [username, setUsername] = useState('');
+  const [state, setState] = useState({})
+  const [title, setTitle] = useState("")
+  const [author, setAuthor] = useState("")
+  const [category, setCategory] = useState("")
+  const [publishedYear, setPublishorYear] = useState("")
 
-  useEffect(() => {
-    const role = localStorage.getItem('userRole');
-    const name = localStorage.getItem('username');
-
-    // If no user is logged in, redirect to login
-    if (!role || !name) {
-      navigate('/login');
-      return;
-    }
-
-    setUserRole(role);
-    setUsername(name);
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('username');
-    navigate('/login');
-  };
-
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    axios.post("http://localhost:5000/api/books",
+      {
+        title: title,
+        author: author,
+        category: category,
+        publishedYear: publishedYear
+      })
+      .then(response => {
+        console.log(response.data)
+        setState(response.data)
+      })
+    setTitle("")
+    setAuthor("")
+    setCategory("")
+    setPublishorYear("")
+      .catch((err) => console.log("error:", err))
+  }
   return (
-    <div className="dashboard-container p-8">
-      <h1 className="text-3xl font-bold text-gray-800">Welcome, {username}!</h1>
-      <p className="text-gray-600 mt-2">Your role: <span className="font-semibold">{userRole}</span></p>
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 flex justify-center p-7 relative">
+      <button
+        onClick={() => navigate(-1)}
+        className="absolute top-8 left-8 text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors duration-200"
+      >
+        ← Back
+      </button>
+      <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+        <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Create Book</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
 
-      <div className="mt-8 flex gap-4">
-        {/* Conditionally render the Create button – hidden for role "user" */}
-        {userRole !== 'user' && (
-          <button
-            onClick={() => navigate('/createbook')}
-            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
-          >
-            + Create Book
-          </button>
-        )}
+            <input
+              type="text"
+              placeholder="author"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
 
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition"
-        >
-          Logout
-        </button>
+            <input
+              type="text"
+              placeholder="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+
+            <input
+              type="text"
+              placeholder="publishor"
+              value={publishedYear}
+              onChange={(e) => setPublishorYear(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+
+            <button
+              type='Submit'
+              className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition-colors duration-200 font-medium mt-4"
+            >
+              Create book
+            </button>
+          </div>
+        </form>
       </div>
-
-      {/* You can add more dashboard content here */}
     </div>
-  );
+  )
 }
-
-export default Dashboard;
+export default Createbook

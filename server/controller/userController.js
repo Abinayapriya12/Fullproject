@@ -9,7 +9,7 @@ const { sendEmail } = require("../helper/sendEmail")
 
 const register = async (req, res) => {
     try {
-        const { username, password, email, gender, mobile, age } = req.body;
+        const { username, password, email, gender, mobile, age,role } = req.body;
         
         // Check if user already exists
         const existingUser = await User.findOne({ $or: [{ username }, { email }] });
@@ -18,7 +18,7 @@ const register = async (req, res) => {
         }
         
         // Create user – password is plain text here, schema will hash it
-        const user = new User({ username, password, email, gender, mobile, age });
+        const user = new User({ username, password, email, gender, mobile, age,role });
         await user.save();  // pre('save') hashes password once
         
         res.status(201).json({ success: true, message: "Registered successfully" });
@@ -30,7 +30,7 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, password} = req.body;
         
         // IMPORTANT: .select('+password') to include password field
         const user = await User.findOne({ username }).select('+password');
@@ -46,7 +46,7 @@ const login = async (req, res) => {
         
         // Generate token (optional)
         const token = jwt.sign({ id: user._id, username: user.username }, process.env.SECRET_KEY, { expiresIn: '7d' });
-        
+        console.log("User role from DB:", user.role);
         res.status(200).json({
             success: true,
             message: "Login successful",
@@ -58,28 +58,7 @@ const login = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-const verifyToken = (req, res, next) => {
-    let token = req.cookies?.token;
 
-    if  (!token && req.headers.authorization){
-          token = req.headers.authorization
-    };
-
-    if (!token) {
-        return res.status(401).json({
-            success:false,
-            message: "request denied.No token provided"
-        })
-    }
-    try {
-        const verified = jwt.verify(token, process.env.SECRET_KEY);
-        req.user = verified;
-        next();
-    }
-    catch (err) {
-        res.status(400).json("invalid or expired token")
-    }
-}
 
  const createUser = async (req, res) => {
     try {
@@ -221,8 +200,7 @@ const updateUser = async (id, updates) => {
 
 
 module.exports = { register, 
-    login, 
-    verifyToken, 
+    login,  
      createUser, 
     viewAllbooks, 
     deletebook, 

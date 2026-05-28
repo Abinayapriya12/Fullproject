@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './App.css';
 import './index.css';
 import axios from 'axios';
@@ -13,20 +13,22 @@ function Register() {
   const [gender, setGender] = useState("");
   const [mobile, setMobile] = useState("");
   const [age, setAge] = useState("");
-  const [role, setRole] = useState("Student"); // NEW: role state, default "Student"
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+ const roleRef = useRef("Student");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     // Trim all string inputs
+  
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedMobile = mobile.trim();
     const ageNumber = parseInt(age, 10);
-    const trimmedRole = role.trim(); // NEW
+   const trimmedRole = roleRef.current.value.trim(); 
+   
 
     // Basic validation (including role)
     if (!trimmedUsername || !password || !trimmedEmail || !gender || !trimmedMobile || !age || !trimmedRole) {
@@ -35,7 +37,7 @@ function Register() {
     }
 
     // Role validation – only Student or Admin allowed
-    if (trimmedRole !== "Student" && trimmedRole !== "Admin") {
+    if (trimmedRole !== "student" && trimmedRole !== "admin") {
       setError("Only Student and Admin roles are allowed to register");
       return;
     }
@@ -73,7 +75,7 @@ function Register() {
       });
 
       console.log("Registered successfully", response.data);
-
+      
       // Clear form only on success
       setUsername("");
       setPassword("");
@@ -81,7 +83,7 @@ function Register() {
       setGender("");
       setMobile("");
       setAge("");
-      setRole("Student");            // reset role to default
+      
 
       // Navigate to login page
       navigate("/login");
@@ -196,13 +198,14 @@ function Register() {
             {/* NEW: Role selection dropdown */}
             <label className="block text-gray-700 font-semibold">Role</label>
             <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
+            ref={roleRef}
+               defaultValue="Student"
+              autoComplete="off" 
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
               disabled={isSubmitting}
             >
-              <option value="Student">Student</option>
-              <option value="Admin">Admin</option>
+              <option value="student">sudent</option>
+              <option value="admin">admin</option>
             </select>
 
             <button

@@ -6,7 +6,8 @@ const userRoutes = require("./routes/userRoutes")
 const cookieparser=require("cookie-parser")
 const bodyParser = require('body-parser');
 const { sendMail } =require("./controller/userController")
-const reset= require("./controller/resetpassController"); 
+const reset= require("./controller/resetpassController");
+const multer =require("multer") 
 
 const app = express()
 dotenv.config();
@@ -18,9 +19,10 @@ connectDb();
 
 app.use("/api", userRoutes)
 
-app.get("/", (req, res) => {
-    res.send("backend is running")
-})
+// Serve uploaded files statically
+//app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`server running on ${PORT}`);

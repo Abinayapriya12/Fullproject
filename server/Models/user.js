@@ -23,14 +23,10 @@ const userSchema = new mongoose.Schema({
     gender: String,
     mobile: String,
     age: Number,
-    role: {
-        type: String,
-        default: "user"
-    },
+   role: { type: String, 
+          enum: ['student', 'admin']},
     resetToken: String,
     resetExpires: Date
-}, {
-    timestamps: true
 });
 
 // Hash password before saving
@@ -46,4 +42,4 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-module.exports = mongoose.model("user", userSchema); 
+module.exports = mongoose.models.User || mongoose.model('User', userSchema);

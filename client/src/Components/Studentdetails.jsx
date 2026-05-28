@@ -1,4 +1,4 @@
-import React from 'react'
+ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
 function Admin1() {
@@ -41,4 +41,4 @@ function Admin1() {
   )
 }
 
-export default Admin1
+export default Admin1 

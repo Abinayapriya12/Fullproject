@@ -130,10 +130,18 @@ function Login() {
       </div>
     )
   );
+ //log out
+  /*  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('username');
+    navigate('/login');
+  }; */
+
 
   return (
     <div className="flex items-center justify-center p-14">
       <div className="max-w-md w-full mx-auto p-6 bg-white rounded-lg shadow-md">
+        
         {/* LOGIN VIEW */}
         {view === 'login' && (
           <>
@@ -296,6 +304,9 @@ function Login() {
             {renderMessage()}
           </>
         )}
+        {/*  <button
+          onClick={handleLogout}
+          className="bg-red-500 text-white px-6 py-2 rounded-lg transition ml-20">Logout</button> */}
       </div>
     </div>
   );
