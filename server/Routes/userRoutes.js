@@ -1,3 +1,4 @@
+const upload =require("../middleware/upload")
 const userController = require("../controller/userController")
 const resetpassController =require("../controller/resetpassController")
 const AssignmentsubmissionController =require('../controller/AssignmentsubmissionController')
@@ -8,6 +9,8 @@ const user = require("../Models/user");
 const router = express.Router();
 const {login}=require('../controller/userController')
 const { forgotPassword, verifyOtp, resetPassword}=require('../controller/resetpassController')
+const Submission = require('../models/Submission ')
+
 
 router.post("/user-register", userController.register)
 router.post("/user-login",userController.login)
@@ -27,15 +30,15 @@ router.post('/reset-password', resetPassword);
 
 router.post("/assignments",verifyToken,AssignmentsubmissionController.createAssignment)
 
-router.get("/assignments",AssignmentsubmissionController.getAssignments)
-router.get("/assignments/:id",AssignmentsubmissionController.getAssignmentById)
-router.put("/assignments/:id",AssignmentsubmissionController.updateAssignment)
-router.delete("/assignments/:id",AssignmentsubmissionController.deleteAssignment)
+router.get("/assignments",AssignmentsubmissionController.getAssignments) //students
+router.get("/assignments/:id",AssignmentsubmissionController.getAssignmentById)// 
+router.put("/assignments/:id",AssignmentsubmissionController.updateAssignment)// admin
+router.delete("/assignments/:id",AssignmentsubmissionController.deleteAssignment)// admin
 
-router.post("/submissions",verifyToken,AssignmentsubmissionController.submitAssignment)
+router.post('/submissions',verifyToken,upload.single('submission'),AssignmentsubmissionController.submitAssignment);//student 
 
-router.get("/submissions",AssignmentsubmissionController.getMySubmissions)
-router.get("/submissions/:id",AssignmentsubmissionController.getSubmissionsForAssignment)
-router.put("/submissions/:id",AssignmentsubmissionController.gradeSubmission)
+router.get("/submissions",verifyToken,AssignmentsubmissionController.getMySubmissions)//student
+router.get("/submissions/:id",AssignmentsubmissionController.getSubmissionsForAssignment)//student
+router.put("/submissions/:id",verifyToken,AssignmentsubmissionController.gradeSubmission)//admin
 
 module.exports=router

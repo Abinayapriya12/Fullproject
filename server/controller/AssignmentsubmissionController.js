@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const Assignment = require('../models/Assignment');
-const submission =require('../Models/Submission ')
+const Submission =require('../models/Submission ');
 
 const User = require('../models/User');
 // @route GET /api/assignments
@@ -102,7 +102,7 @@ const submitAssignment = async (req, res) => {
         const submission = new Submission({
             assignment: assignmentId,
             student: studentId,
-            filePath: req.file.path  // or store URL if using cloud storage
+            filePath: req.filepath  // or store URL if using cloud storage
         });
         await submission.save();
 
@@ -139,20 +139,30 @@ const getSubmissionsForAssignment = async (req, res) => {
 
 // @route PUT /api/submissions/:submissionId/grade (admin only)
 const gradeSubmission = async (req, res) => {
-    try {
-        const { grade, feedback } = req.body;
-        const submission = await Submission.findById(req.params.submissionId);
-        if (!submission) {
-            return res.status(404).json({ message: 'Submission not found' });
-        }
-        submission.grade = grade;
-        submission.feedback = feedback;
-        submission.status = 'graded';
-        await submission.save();
-        res.json({ message: 'Submission graded successfully', submission });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+  try {
+    let query = { _id: req.params.id };
+    
+    // If user is NOT admin, restrict to their own submissions
+    if (req.user.role !== 'admin') {
+      query.student = req.user.id;
     }
+    
+    const submission = await Submission.findOne(query);
+    
+    if (!submission) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
+    
+    // Update fields
+    submission.marks = req.body.marks;
+    submission.feedback = req.body.feedback;
+    submission.status = "graded";
+    await submission.save();
+    
+    res.json({ message: "Submission graded", submission });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 module.exports = {

@@ -8,4 +8,4 @@ const assignmentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports =mongoose.model("assignment",assignmentSchema)
+module.exports =mongoose.model("Assignment",assignmentSchema)

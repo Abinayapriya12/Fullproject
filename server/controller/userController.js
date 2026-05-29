@@ -45,7 +45,7 @@ const login = async (req, res) => {
         }
         
         // Generate token (optional)
-        const token = jwt.sign({ id: user._id, username: user.username }, process.env.SECRET_KEY, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user._id, username: user.username, role: user.role  }, process.env.SECRET_KEY, { expiresIn: '7d' });
         console.log("User role from DB:", user.role);
         res.status(200).json({
             success: true,
