@@ -39,6 +39,9 @@ function Login() {
       if (response.data.message === "Login successful") {
         localStorage.setItem("userRole", response.data.role);
         localStorage.setItem("username", username);
+         localStorage.setItem("token", response.data.token);
+        
+
 
         setUsername("");
         setPassword("");
@@ -50,8 +53,6 @@ function Login() {
         setPassword("");
       }
     } catch (err) {
-      console.log("Full error response:", err.response);  
-      console.log(err.message);
       showMessage(err.response?.data?.message || "Network error");
       setUsername("");
       setPassword("");
@@ -130,12 +131,7 @@ function Login() {
       </div>
     )
   );
- //log out
-  /*  const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('username');
-    navigate('/login');
-  }; */
+
 
 
   return (

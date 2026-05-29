@@ -1,5 +1,6 @@
 import './App.css';
 import React, { useState, useEffect } from 'react';
+import axios from 'axios'; 
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { Sun, Moon } from 'lucide-react';
 import Login from './Login';
@@ -10,31 +11,27 @@ import Getall from './Components/Getall';
 import Studentdetails from './Components/Studentdetails';
 import Createstudent from './Components/createstudent';
 import Getstudentdetails from './Components/Getstudentdetails';
-import Dashboard from '../Dashboard';  
+import Dashboard from '../Dashboard'; 
+import AllSubmissions from './Assignmentsubmissioncomponnent/AllSubmissions'; 
+import AssignmentList from './Assignmentsubmissioncomponnent/AssignmentList';
+import ManageAssignment from './Assignmentsubmissioncomponnent/ManageAssignments';
+import MySubmissions from './Assignmentsubmissioncomponnent/MySubmissions';
+import SubmitAssignments from './Assignmentsubmissioncomponnent/SubmitAssignment';
 
 function App() {
-  const [darkMode, setDarkMode] = useState(false);
+  
 
-  useEffect(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved === 'dark') {
-      document.documentElement.classList.add('dark');
-      setDarkMode(true);
+// Global Axios interceptor – adds token to every request
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');  
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-  }, []);
-
-  const toggleTheme = () => {
-    const html = document.documentElement;
-    if (darkMode) {
-      html.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    }
-    setDarkMode(!darkMode);
-  };
-
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -76,8 +73,14 @@ function App() {
             <Route path="/studentdetails" element={<Studentdetails />} />
             <Route path="/createstudent" element={<Createstudent />} />
             <Route path="/getstudentdetails" element={<Getstudentdetails />} />
-            
-            
+
+
+            <Route path="/manageassignments" element={<ManageAssignment/>}/>            
+            <Route path="/allsubmissions" element={<AllSubmissions/>}/>
+            <Route path="/assignmentlist" element={<AssignmentList/>}/>
+            <Route path="/mysubmissions" element={<MySubmissions/>}/>
+
+            <Route path="/submitassignments/:id" element={<SubmitAssignments/>}/>
           </Routes>
         </main>
       </div>
