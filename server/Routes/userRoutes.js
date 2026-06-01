@@ -40,5 +40,6 @@ router.post('/submissions',verifyToken,upload.single('submission'),Assignmentsub
 router.get("/submissions",verifyToken,AssignmentsubmissionController.getMySubmissions)//student
 router.get("/submissions/:id",AssignmentsubmissionController.getSubmissionsForAssignment)//student
 router.put("/submissions/:id",verifyToken,AssignmentsubmissionController.gradeSubmission)//admin
+router.get("/allsubmissions", verifyToken, AssignmentsubmissionController.getAllSubmissions);// admin
 
 module.exports=router

@@ -120,7 +120,7 @@ function ManageAssignments() {
                 />
                 <input
                   type="datetime-local"
-                  value={form.deadline.slice(0, 16)}
+                  value={form.deadline ? form.deadline.slice(0, 16) : ''}
                   onChange={e => setForm({ ...form, deadline: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
                   required

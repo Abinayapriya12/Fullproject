@@ -13,21 +13,22 @@ function AllSubmissions() {
     // Fetch all submissions – if you have a dedicated endpoint like /submissions/all
     // Otherwise fetch assignments and their submissions.
     // For simplicity, we assume an endpoint /api/submissions/all exists.
-    axios.get('http://localhost:5000/api/submissions/all')
-      .then(res => setSubmissions(res.data))
+    axios.get('http://localhost:5000/api/allsubmissions')
+      .then(res => {
+        setSubmissions(res.data)
+      })
       .catch(err => console.error(err));
   }, []);
 
-  const handleGrade = async () => {
-    await axios.put(`http://localhost:5000/api/submissions/${selectedSub._id}/grade`, { grade, feedback });
-    setSelectedSub(null);
-    setGrade('');
-    setFeedback('');
-    // Refresh list
-    const { data } = await axios.get('http://localhost:5000/api/submissions/all');
-    setSubmissions(data);
-  };
-
+const handleGrade = async () => {
+  await axios.put(`http://localhost:5000/api/submissions/${selectedSub._id}`, { grade, feedback });
+  setSelectedSub(null);
+  setGrade('');
+  setFeedback('');
+  // Refresh list
+  const { data } = await axios.get('http://localhost:5000/api/allsubmissions');
+  setSubmissions(data);
+};
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-7">
       <button
@@ -48,22 +49,30 @@ function AllSubmissions() {
               <div key={sub._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                 <div className="flex justify-between items-start flex-wrap gap-4">
                   <div>
-                    <p className="font-semibold text-gray-800">{sub.student.name} ({sub.student.email})</p>
-                    <p className="text-sm text-indigo-600">Assignment: {sub.assignment.title}</p>
-                    <p className="text-sm text-gray-500">Submitted: {new Date(sub.submittedAt).toLocaleString()}</p>
+                    <p className="font-semibold text-gray-800">
+                      {sub.student ? `${sub.student.name} (${sub.student.email})` : 'Unknown student (deleted account)'}
+                    </p>
+                    <p className="text-sm text-indigo-600">
+                      Assignment: {sub.assignment?.title|| 'Unknown student (deleted account)'}</p>
+                    <p className="text-sm text-gray-500">
+                      Submitted: {new Date(sub.submittedAt).toLocaleString()}</p>
                     {sub.grade !== undefined && (
-                      <p className="mt-2 text-green-600 font-medium">Grade: {sub.grade} | Feedback: {sub.feedback}</p>
+                      <p className="mt-2 text-green-600 font-medium">
+                        Grade: {sub.grade} | Feedback: {sub.feedback}</p>
                     )}
                   </div>
                   <div className="flex gap-3">
+                    {sub.filePath ? (
                     <a
-                      href={sub.filePath}
+                       href={sub.filePath.startsWith('http') ? sub.filePath : `http://localhost:5000/${sub.filePath}`}
+                      download
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                     >
                       Download
-                    </a>
+                    </a>):( <span className="text-gray-400 text-sm">File missing</span>
+                    )}
                     <button
                       onClick={() => {
                         setSelectedSub(sub);
@@ -87,7 +96,7 @@ function AllSubmissions() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
             <h2 className="text-2xl font-bold mb-4">Grade Submission</h2>
-            <p className="text-gray-700 mb-4">Student: {selectedSub.student.name}</p>
+            <p className="text-gray-700 mb-4">Student: {selectedSub.student?.name || 'Unknown student'}</p>
             <div className="space-y-4">
               <input
                 type="number"

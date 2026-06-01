@@ -106,6 +106,7 @@ function SubmitAssignment() {
             <button
               type="submit"
               disabled={loading}
+              
               className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition-colors duration-200 font-medium disabled:opacity-50"
             >
               {loading ? 'Uploading...' : 'Submit'}
@@ -118,3 +119,4 @@ function SubmitAssignment() {
 }
 
 export default SubmitAssignment;
+

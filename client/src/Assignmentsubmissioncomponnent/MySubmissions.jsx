@@ -6,50 +6,99 @@ function MySubmissions() {
   const navigate = useNavigate();
   const [submissions, setSubmissions] = useState([]);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/submissions')
-      .then(res => setSubmissions(res.data))
-      .catch(err => console.error('Error fetching submissions:', err));
+    fetchSubmissions();
   }, []);
 
+  const fetchSubmissions = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('http://localhost:5000/api/submissions');
+      let data = res.data;
+
+      if (Array.isArray(data)) {
+        // Keep only submissions with valid assignment and filePath (optional now)
+        const validSubmissions = data.filter(sub => sub !== null && sub.assignment !== null);
+        setSubmissions(validSubmissions);
+      } else {
+        console.warn('API did not return an array:', data);
+        setSubmissions([]);
+      }
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching submissions:', err);
+      setError('Failed to load your submissions. Please try again.');
+      setSubmissions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Improved download handler with full URL construction and fallback
   const handleDownload = async (sub) => {
-    const filePath = sub.filePath;
+    const filePath = sub?.filePath;
+    console.log('🔍 Raw filePath from DB:', filePath);
+
     if (!filePath) {
-      alert('No file associated with this submission.');
+      alert('❌ No file associated with this submission. The file path is missing in the database.');
       return;
     }
 
-    // Construct full URL – adjust the base path to match your backend's static folder
+    // Build the correct URL
     let fullUrl;
     if (filePath.startsWith('http')) {
       fullUrl = filePath;
     } else {
-      // Assumes files are stored under /uploads/ on your backend
-      fullUrl = `http://localhost:5000/uploads/${filePath.replace(/^\/uploads\//, '')}`;
+      // Remove any leading 'uploads/' or '/uploads/' to avoid duplication
+      const cleanPath = filePath.replace(/^\/?uploads\//, '');
+      fullUrl = `http://localhost:5000/uploads/${cleanPath}`;
     }
+    console.log('🌐 Constructed URL:', fullUrl);
 
     setDownloadingId(sub._id);
     try {
+      // First, try to fetch the file to see if it exists
       const response = await axios.get(fullUrl, { responseType: 'blob' });
-      const blob = new Blob([response.data]);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      // Extract filename from path or use assignment title
-      const filename = filePath.split('/').pop() || `${sub.assignment.title}.pdf`;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      if (response.status === 200) {
+        // Create a blob URL and open in new tab
+        const blob = new Blob([response.data]);
+        const blobUrl = window.URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        // Revoke after a short delay to free memory
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+      } else {
+        alert('⚠️ File exists but could not be opened.');
+      }
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Download failed. The file may not exist on the server.');
+      if (error.response?.status === 404) {
+        alert('❌ File not found on server. The file may have been deleted or the path is incorrect.');
+      } else {
+        alert('❌ Download failed. Check your network connection or server status.');
+      }
     } finally {
       setDownloadingId(null);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-7 flex justify-center items-center">
+        <div className="text-gray-600">Loading your submissions...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-7 flex justify-center items-center">
+        <div className="text-red-600">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-7">
@@ -67,31 +116,36 @@ function MySubmissions() {
           </div>
         ) : (
           <div className="space-y-6">
-            {submissions.map(sub => (
-              <div key={sub._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-800">{sub.assignment.title}</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Submitted: {new Date(sub.submittedAt).toLocaleString()}
-                    </p>
-                    {sub.grade !== undefined && (
-                      <p className="mt-2 text-green-600 font-medium">Grade: {sub.grade} / 100</p>
-                    )}
-                    {sub.feedback && (
-                      <p className="mt-1 text-gray-700 italic">Feedback: {sub.feedback}</p>
-                    )}
+            {submissions.map(sub => {
+              if (!sub || !sub.assignment) return null;
+              return (
+                <div key={sub._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-800">
+                        {sub.assignment.title || 'Untitled Assignment'}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Submitted: {new Date(sub.submittedAt).toLocaleString()}
+                      </p>
+                      {sub.grade !== undefined && sub.grade !== null && (
+                        <p className="mt-2 text-green-600 font-medium">Grade: {sub.grade} / 100</p>
+                      )}
+                      {sub.feedback && (
+                        <p className="mt-1 text-gray-700 italic">Feedback: {sub.feedback}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDownload(sub)}
+                      disabled={downloadingId === sub._id}
+                      className="text-indigo-600 hover:text-indigo-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {downloadingId === sub._id ? 'Opening...' : 'Open File →'}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleDownload(sub)}
-                    disabled={downloadingId === sub._id}
-                    className="text-indigo-600 hover:text-indigo-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {downloadingId === sub._id ? 'Downloading...' : 'Download File →'}
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

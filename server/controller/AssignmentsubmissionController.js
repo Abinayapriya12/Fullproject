@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const Assignment = require('../models/Assignment');
-const Submission =require('../models/Submission ');
+const Submission = require('../models/Submission ');
 
 const User = require('../models/User');
 // @route GET /api/assignments
@@ -99,14 +99,23 @@ const submitAssignment = async (req, res) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
+        // ✅ Fix: use req.file.path 
+        const filePath = req.file.path.replace(/\\/g, '/'); // normalize Windows paths
         const submission = new Submission({
             assignment: assignmentId,
             student: studentId,
-            filePath: req.filepath  // or store URL if using cloud storage
+            filePath: filePath,
+            submittedAt: new Date()
         });
+        console.log(req.file.path)
+        console.log('req.file:', req.file);
+        // After saving the submission
+        console.log('Saved submission:', submission);
+        console.log('filePath saved:', submission.filePath);
         await submission.save();
 
         res.status(201).json({ message: 'Assignment submitted successfully', submission });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: error.message });
@@ -139,30 +148,47 @@ const getSubmissionsForAssignment = async (req, res) => {
 
 // @route PUT /api/submissions/:submissionId/grade (admin only)
 const gradeSubmission = async (req, res) => {
-  try {
-    let query = { _id: req.params.id };
-    
-    // If user is NOT admin, restrict to their own submissions
-    if (req.user.role !== 'admin') {
-      query.student = req.user.id;
+    try {
+        let query = { _id: req.params.id };
+
+        // If user is NOT admin, restrict to their own submissions
+        if (req.user.role !== 'admin') {
+            query.student = req.user.id;
+        }
+
+        const submission = await Submission.findOne(query);
+
+        if (!submission) {
+            return res.status(404).json({ message: "Submission not found" });
+        }
+
+        // Update fields
+        submission.marks = req.body.marks;
+        submission.feedback = req.body.feedback;
+        submission.status = "graded";
+        await submission.save();
+
+        res.json({ message: "Submission graded", submission });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-    
-    const submission = await Submission.findOne(query);
-    
-    if (!submission) {
-      return res.status(404).json({ message: "Submission not found" });
+};
+
+const getAllSubmissions = async (req, res) => {
+    try {
+        const submissions = await Submission.find({
+            student: { $ne: null },
+            assignment: { $ne: null }
+        })
+            .populate('student', 'name email')
+            .populate('assignment', 'title');
+
+        // Additional safety filter
+        const valid = submissions.filter(sub => sub.student !== null && sub.assignment !== null);
+        res.status(200).json(valid);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-    
-    // Update fields
-    submission.marks = req.body.marks;
-    submission.feedback = req.body.feedback;
-    submission.status = "graded";
-    await submission.save();
-    
-    res.json({ message: "Submission graded", submission });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
 };
 
 module.exports = {
@@ -174,6 +200,7 @@ module.exports = {
     submitAssignment,
     getMySubmissions,
     getSubmissionsForAssignment,
-    gradeSubmission
+    gradeSubmission,
+    getAllSubmissions
 };
 

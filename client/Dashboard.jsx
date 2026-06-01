@@ -53,7 +53,7 @@ function Dashboard() {
             {!isRegularUser && (
               <button
                 onClick={() => navigate('/createbook')}
-                className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
               >
                 Create Book
               </button>
@@ -107,13 +107,13 @@ function Dashboard() {
               <>
                 <button
                   onClick={() => navigate('/manageassignments')}
-                  className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700"
+                  className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
                 >
                   Manage Assignments 
                 </button>
                 <button
                   onClick={() => navigate('/allsubmissions')}
-                  className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700"
+                  className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
                 >
                   View All Submissions
                 </button>
