@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken')
 const Assignment = require('../models/Assignment');
 const Submission = require('../models/Submission ');
 
+
 const User = require('../models/User');
 // @route GET /api/assignments
 const getAssignments = async (req, res) => {
@@ -110,7 +111,6 @@ const submitAssignment = async (req, res) => {
         console.log(req.file.path)
         console.log('req.file:', req.file);
         // After saving the submission
-        console.log('Saved submission:', submission);
         console.log('filePath saved:', submission.filePath);
         await submission.save();
 
@@ -128,6 +128,11 @@ const getMySubmissions = async (req, res) => {
         const submissions = await Submission.find({ student: req.user.id })
             .populate('assignment', 'title description deadline')
             .sort({ submittedAt: -1 });
+
+            console.log('Submissions with file paths:',submissions.map(s=>({
+                id:s._id,
+                filePath:s.filePath
+            })));
         res.json(submissions);
     } catch (error) {
         res.status(500).json({ message: error.message });

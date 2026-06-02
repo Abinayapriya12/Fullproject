@@ -11,7 +11,8 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, "Please enter valid password"],
-        select: false
+        select: false,
+        minlength:6
     },
     email: {
         type: String,

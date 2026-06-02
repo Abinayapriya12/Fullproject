@@ -7,7 +7,7 @@ const cookieparser=require("cookie-parser")
 const bodyParser = require('body-parser');
 const { sendMail } =require("./controller/userController")
 const reset= require("./controller/resetpassController");
-const multer =require("multer") 
+const path = require ('path')
 
 const app = express()
 dotenv.config();
@@ -18,7 +18,7 @@ app.use(cors());
 connectDb();
 
 app.use("/api", userRoutes)
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`server running on ${PORT}`);
