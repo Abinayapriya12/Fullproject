@@ -15,7 +15,7 @@ function Register() {
   const [age, setAge] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
- const roleRef = useRef("Student");
+  const roleRef = useRef("Student");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,8 +26,10 @@ function Register() {
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedMobile = mobile.trim();
+    const trimmedStudentId = studentId.trim();
+    const trimmedDepartment = department.trim();
     const ageNumber = parseInt(age, 10);
-   const trimmedRole = roleRef.current.value.trim(); 
+    const trimmedRole = roleRef.current.value.trim(); 
    
 
     // Basic validation (including role)
@@ -46,6 +48,11 @@ function Register() {
       setError("Age must be a valid number between 1 and 100");
       return;
     }
+   
+       if (isNaN(enrollmentYearNumber) || enrollmentYearNumber < 2000 || enrollmentYearNumber > new Date().getFullYear()) {
+      setError("Please enter a valid enrollment year");
+      return;
+    }
 
     // Validate mobile number (10 digits, no letters/symbols)
     const mobileRegex = /^\d{10}$/;
@@ -61,6 +68,12 @@ function Register() {
       return;
     }
 
+     const studentIdRegex = /^STU\d{7}$/;
+    if (!studentIdRegex.test(trimmedStudentId)) {
+      setError("Student ID must be in format: STU followed by 7 digits (e.g., STU2024001)");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -71,7 +84,8 @@ function Register() {
         gender: gender,
         mobile: trimmedMobile,
         age: ageNumber,
-        role: trimmedRole,          // NEW: send role to backend
+        role: trimmedRole, 
+        
       });
 
       console.log("Registered successfully", response.data);

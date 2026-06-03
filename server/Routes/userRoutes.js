@@ -10,7 +10,7 @@ const router = express.Router();
 const {login}=require('../controller/userController')
 const { forgotPassword, verifyOtp, resetPassword}=require('../controller/resetpassController')
 const Submission = require('../models/Submission ')
-
+const getUsers = require('../controller/userController')
 
 router.post("/user-register", userController.register)
 router.post("/user-login",userController.login)

@@ -4,8 +4,8 @@ const fs = require('fs');               // file system
 
 // Ensure uploads directory exists
 const uploadDir = 'uploads/';      
-if (!fs.existsSync(uploadDir)) {            //folder illana (existsSync check pannum)
-    fs.mkdirSync(uploadDir, { recursive: true }); //uploads/ folder ah create pannu, recursive true na, parent folder illana adhuvum create aagum
+if (!fs.existsSync(uploadDir)) {            
+    fs.mkdirSync(uploadDir, { recursive: true }); 
 }
 
 const storage = multer.diskStorage({
@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (allowedTypes.includes(file.mimetype)) { 
-        cb(null, true); //upload pandra file type allowed list-la irukka nu check pannu
+        cb(null, true); 
     } else {
         cb(new Error('Only PDF, DOC, and DOCX files are allowed'), false);
     }

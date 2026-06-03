@@ -26,7 +26,7 @@ function Dashboard() {
   const isRegularUser = userRole === 'student';
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-300 p-6">
       {/* Header with logout */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">

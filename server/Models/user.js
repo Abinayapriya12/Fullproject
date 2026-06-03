@@ -25,8 +25,12 @@ const userSchema = new mongoose.Schema({
     mobile: String,
     age: Number,
    role: { type: String, 
-          enum: ['student', 'admin']},
-    resetToken: String,
+          enum: ['student', 'admin']},                 //enumerations
+    isEligible: {
+        type: Boolean,
+        default: false  
+    },
+          resetToken: String,
     resetExpires: Date
 });
 
