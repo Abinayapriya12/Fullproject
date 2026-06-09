@@ -116,7 +116,7 @@ function Login() {
     } catch (err) {
       showMessage(err.response?.data?.message || "Reset failed");
     }
-  };
+  }; 
 
   // Resend OTP (reuse send OTP)
   const handleResendOtp = () => {

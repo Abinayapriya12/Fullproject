@@ -62,15 +62,17 @@ const updateAssignment = async (req, res) => {
 // @route DELETE /api/assignments/:id (admin only)
 const deleteAssignment = async (req, res) => {
     try {
-        const assignment = await Assignment.findById(req.params.id);
-        if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
-        await assignment.deleteOne();
+        const result = await Assignment.deleteOne(req.params.id);
+        
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'Assignment not found' });
+        }
+        
         res.json({ message: 'Assignment deleted' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
-
 
 
 // @route POST /api/submissions (student only, file upload)
@@ -129,7 +131,7 @@ const getMySubmissions = async (req, res) => {
             .populate('assignment', 'title description deadline')
             .sort({ submittedAt: -1 });
 
-            console.log('Submissions with file paths:',submissions.map(s=>({
+            (submissions.map(s=>({
                 id:s._id,
                 filePath:s.filePath
             })));

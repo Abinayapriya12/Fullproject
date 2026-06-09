@@ -1,117 +1,106 @@
-import React, { useState, useRef } from 'react';
-import './App.css';
-import './index.css';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 function Register() {
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
-  const [gender, setGender] = useState("");
-  const [mobile, setMobile] = useState("");
-  const [age, setAge] = useState("");
-  const [error, setError] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [gender, setGender] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [age, setAge] = useState('');
+  const [studentId, setStudentId] = useState('');
+  const [department, setDepartment] = useState('');
+  const [enrollmentYear, setEnrollmentYear] = useState('');
+  const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const roleRef = useRef("Student");
+  const [selectedRole, setSelectedRole] = useState('student');
+  const [formResetKey, setFormResetKey] = useState(Date.now());
+
+  useEffect(() => {
+    clearForm();
+  }, []);
+
+  const clearForm = () => {
+    setUsername('');
+    setPassword('');
+    setEmail('');
+    setGender('');
+    setMobile('');
+    setAge('');
+    setStudentId('');
+    setDepartment('');
+    setEnrollmentYear('');
+    setError('');
+    setSelectedRole('student');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setError('');
 
-    // Trim all string inputs
-  
-    const trimmedUsername = username.trim();
-    const trimmedEmail = email.trim().toLowerCase();
-    const trimmedMobile = mobile.trim();
-    const trimmedStudentId = studentId.trim();
-    const trimmedDepartment = department.trim();
-    const ageNumber = parseInt(age, 10);
-    const trimmedRole = roleRef.current.value.trim(); 
-   
+    const freshUsername = username.trim();
+    const freshPassword = password;
+    const freshEmail = email.trim().toLowerCase();
+    const freshGender = gender;
+    const freshMobile = mobile.trim();
+    const freshAge = parseInt(age, 10);
+    const freshStudentId = studentId.trim().toUpperCase();
+    const freshDepartment = department.trim();
+    const freshEnrollmentYear = parseInt(enrollmentYear, 10);
 
-    // Basic validation (including role)
-    if (!trimmedUsername || !password || !trimmedEmail || !gender || !trimmedMobile || !age || !trimmedRole) {
-      setError("All fields are required");
+    if (!freshUsername || !freshPassword || !freshEmail || !freshGender || !freshMobile || !freshAge) {
+      setError("All basic fields are required");
       return;
     }
 
-    // Role validation – only Student or Admin allowed
-    if (trimmedRole !== "student" && trimmedRole !== "admin") {
-      setError("Only Student and Admin roles are allowed to register");
-      return;
-    }
-
-    if (isNaN(ageNumber) || ageNumber <= 0 || ageNumber > 100) {
-      setError("Age must be a valid number between 1 and 100");
-      return;
-    }
-   
-       if (isNaN(enrollmentYearNumber) || enrollmentYearNumber < 2000 || enrollmentYearNumber > new Date().getFullYear()) {
-      setError("Please enter a valid enrollment year");
-      return;
-    }
-
-    // Validate mobile number (10 digits, no letters/symbols)
-    const mobileRegex = /^\d{10}$/;
-    if (!mobileRegex.test(trimmedMobile)) {
-      setError("Mobile number must be exactly 10 digits");
-      return;
-    }
-
-    // Validate email format (basic)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-
-     const studentIdRegex = /^STU\d{7}$/;
-    if (!studentIdRegex.test(trimmedStudentId)) {
-      setError("Student ID must be in format: STU followed by 7 digits (e.g., STU2024001)");
-      return;
+    if (selectedRole === "student") {
+      
+      if (!freshStudentId || !freshDepartment || !freshEnrollmentYear) {
+        setError("Student ID, Department, and Enrollment Year are required");
+        return;
+      }
     }
 
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/user-register", {
-        username: trimmedUsername,
-        password: password,
-        email: trimmedEmail,
-        gender: gender,
-        mobile: trimmedMobile,
-        age: ageNumber,
-        role: trimmedRole, 
-        
-      });
+      const requestData = {
+        username: freshUsername,
+        password: freshPassword,
+        email: freshEmail,
+        gender: freshGender,
+        mobile: freshMobile,
+        age: freshAge,
+        role: selectedRole,
+      };
 
-      console.log("Registered successfully", response.data);
-      
-      // Clear form only on success
-      setUsername("");
-      setPassword("");
-      setEmail("");
-      setGender("");
-      setMobile("");
-      setAge("");
-      
+      if (selectedRole === "student") {
+        requestData.studentId = freshStudentId;  // FIXED: Use camelCase
+        requestData.department = freshDepartment;
+        requestData.enrollmentYear = freshEnrollmentYear;
+      }
 
-      // Navigate to login page
+      console.log("Sending data:", requestData);
+
+      const response = await axios.post("http://localhost:5000/api/user-register", requestData);
+
+      console.log("Success:", response.data);
+
+      clearForm();
+      setFormResetKey(Date.now());
+
+      alert("Registration successful! Please login.");
       navigate("/login");
-    } catch (err) {
-      console.error("Registration error:", err);
 
+    } catch (err) {
+      console.error("Error:", err);
       if (err.response) {
-        const serverMessage = err.response.data?.message || err.response.data?.error || err.response.statusText;
-        setError(`Registration failed: ${serverMessage}`);
-        console.log("Server error details:", err.response.data);
-      } else if (err.request) {
-        setError("Network error: Cannot connect to server. Please check if backend is running.");
+        setError(err.response.data?.message || "Registration failed");
       } else {
-        setError("An unexpected error occurred. Please try again.");
+        setError("Network error");
       }
     } finally {
       setIsSubmitting(false);
@@ -119,131 +108,208 @@ function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 py-8">
       <div className="max-w-md w-full mx-auto p-6 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-center mb-6">Register</h2>
 
         {error && (
-          <div className="mb-4 p-2 bg-red-100 text-red-700 border border-red-400 rounded text-center">
+          <div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-400 rounded text-center">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} autoComplete="off">
+        <form key={formResetKey} onSubmit={handleSubmit} autoComplete="off">
           <div className="space-y-4">
-
-            <label className="block text-gray-700 font-semibold">Username</label>
-            <input
-              type="text"
-              placeholder="Enter Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="off"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              disabled={isSubmitting}
-            />
-
-            <label className="block text-gray-700 font-semibold">Password</label>
-            <input
-              type="password"
-              placeholder="Enter Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              disabled={isSubmitting}
-            />
-
-            <label className="block text-gray-700 font-semibold">Email</label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              disabled={isSubmitting}
-            />
-
-            <label className="block text-gray-700 font-semibold">Gender</label>
-            <div className="flex items-center space-x-4">
-              <label>
-                <input
-                  type="radio"
-                  name="gender"
-                  value="Male"
-                  checked={gender === "Male"}
-                  onChange={(e) => setGender(e.target.value)}
-                  disabled={isSubmitting}
-                /> Male
-              </label>
-
-              <label>
-                <input
-                  type="radio"
-                  name="gender"
-                  value="Female"
-                  checked={gender === "Female"}
-                  onChange={(e) => setGender(e.target.value)}
-                  disabled={isSubmitting}
-                /> Female
-              </label>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-1">Username *</label>
+              <input
+                type="text"
+                name="username"
+                placeholder="Enter Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="off"
+                className="w-full px-3 py-2 border rounded-md"
+                disabled={isSubmitting}
+                required
+              />
             </div>
 
-            <label className="block text-gray-700 font-semibold">Mobile</label>
-            <input
-              type="tel"
-              placeholder="Enter 10-digit mobile number"
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              disabled={isSubmitting}
-            />
+            <div>
+              <label className="block text-gray-700 font-semibold mb-1">Password *</label>
+              <input
+                type="password"
+                name="password"
+                placeholder="Create your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                className="w-full px-3 py-2 border rounded-md"
+                disabled={isSubmitting}
+                required
+              />
+            </div>
 
-            <label className="block text-gray-700 font-semibold">Age</label>
-            <input
-              type="number"
-              placeholder="Enter age"
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              disabled={isSubmitting}
-            />
+            <div>
+              <label className="block text-gray-700 font-semibold mb-1">Email *</label>
+              <input
+                type="email"
+                name="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="off"
+                className="w-full px-3 py-2 border rounded-md"
+                disabled={isSubmitting}
+                required
+              />
+            </div>
 
-            {/* NEW: Role selection dropdown */}
-            <label className="block text-gray-700 font-semibold">Role</label>
-            <select
-            ref={roleRef}
-               defaultValue="Student"
-              autoComplete="off" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              disabled={isSubmitting}
-            >
-              <option value="student">sudent</option>
-              <option value="admin">admin</option>
-            </select>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-1">Gender *</label>
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="Male"
+                    checked={gender === "Male"}
+                    onChange={(e) => setGender(e.target.value)}
+                    disabled={isSubmitting}
+                    className="mr-1"
+                  />
+                  Male
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="Female"
+                    checked={gender === "Female"}
+                    onChange={(e) => setGender(e.target.value)}
+                    disabled={isSubmitting}
+                    className="mr-1"
+                  />
+                  Female
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-gray-700 font-semibold mb-1">Mobile *</label>
+              <input
+                type="tel"
+                name="mobile"
+                placeholder="10-digit mobile number"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                autoComplete="off"
+                className="w-full px-3 py-2 border rounded-md"
+                disabled={isSubmitting}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-700 font-semibold mb-1">Age *</label>
+              <input
+                type="number"
+                name="age"
+                placeholder="Enter age"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                autoComplete="off"
+                className="w-full px-3 py-2 border rounded-md"
+                disabled={isSubmitting}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-700 font-semibold mb-1">Role *</label>
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md"
+                disabled={isSubmitting}
+              >
+                <option value="student">Student</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            {selectedRole === "student" && (
+              <>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">Student ID *</label>
+                  <input
+                    type="text"
+                    name="studentId"  // FIXED: Use "studentId"
+                    placeholder="STU2024001"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    autoComplete="off"
+                    className="w-full px-3 py-2 border rounded-md"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">Department *</label>
+                  <select
+                    name="department"
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md"
+                    disabled={isSubmitting}
+                    required
+                  >
+                    <option value="">Select Department</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                    <option value="Electrical Engineering">Electrical Engineering</option>
+                    <option value="Civil Engineering">Civil Engineering</option>
+                    <option value="Electronics Engineering">Electronics Engineering</option>
+                    <option value="Information Technology">Information Technology</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">Enrollment Year *</label>
+                  <input
+                    type="number"
+                    name="enrollmentYear"
+                    placeholder="e.g., 2024"
+                    value={enrollmentYear}
+                    onChange={(e) => setEnrollmentYear(e.target.value)}
+                    autoComplete="off"
+                    className="w-full px-3 py-2 border rounded-md"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+              </>
+            )}
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full py-2 rounded-md text-white ${
-                isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
-              }`}
+              className={`w-full py-2 rounded-md text-white ${isSubmitting ? 'bg-blue-400' : 'bg-blue-500 hover:bg-blue-600'}`}
             >
               {isSubmitting ? "Registering..." : "Register"}
             </button>
 
             <p className="text-center mt-4">
-              Already registered?
+              Already have an account?
               <button
                 type="button"
                 onClick={() => navigate('/login')}
                 className="text-blue-500 ml-1 font-semibold"
-                disabled={isSubmitting}
               >
                 Login
               </button>
             </p>
-
           </div>
         </form>
       </div>

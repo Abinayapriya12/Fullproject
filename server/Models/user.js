@@ -3,6 +3,7 @@ const validator = require("validator");
 const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema({
+    
     username: {
         type: String,
         required: [true, "please Enter your username"],
@@ -29,8 +30,22 @@ const userSchema = new mongoose.Schema({
     isEligible: {
         type: Boolean,
         default: false  
-    },
-          resetToken: String,
+    }, 
+     studentId: {
+    type: String,
+    sparse: true,
+    match: /^STU\d{7}$/
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+
+    resetToken: String,
     resetExpires: Date
 });
 
