@@ -3,6 +3,7 @@ const validator = require("validator");
 const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema({
+    
     username: {
         type: String,
         required: [true, "please Enter your username"],
@@ -11,7 +12,8 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, "Please enter valid password"],
-        select: false
+        select: false,
+        minlength:6
     },
     email: {
         type: String,
@@ -24,7 +26,25 @@ const userSchema = new mongoose.Schema({
     mobile: String,
     age: Number,
    role: { type: String, 
-          enum: ['student', 'admin']},
+          enum: ['student', 'admin']},                 //enumerations
+    isEligible: {
+        type: Boolean,
+        default: false  
+    }, 
+     studentId: {
+    type: String,
+    sparse: true,
+    match: /^STU\d{7}$/
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+
     resetToken: String,
     resetExpires: Date
 });

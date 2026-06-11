@@ -1,11 +1,16 @@
 const User = require("../Models/user");
 const books = require("../Models/books");
 const studentsdata = require("../Models/studentsdata");
+const Student = require("../Models/Student"); 
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const secretKey = process.env.SECRET_KEY;
 const nodemailer = require("nodemailer")
 const { sendEmail } = require("../helper/sendEmail")
+const middleware = require('../middleware/Auth')
+const {admin} =require('../middleware/Admin')
+const mongoose = require('mongoose'); 
+// register function with student pre-registration validation
 
 const register = async (req, res) => {
     try {
@@ -27,6 +32,7 @@ const register = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+// Login function (keep as is, works with both students and admins)
 
 const login = async (req, res) => {
     try {
@@ -58,9 +64,229 @@ const login = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+// ADMIN FUNCTIONS FOR MANAGING PRE-REGISTERED STUDENTS
 
+// Admin: Add new student to pre-registration database
+const addPreRegisteredStudent = async (req, res) => {
+    try {
+        const { studentId, username, email, gender, mobile, age, enrollmentYear, department } = req.body;
 
- const createUser = async (req, res) => {
+        // Check if student already exists in pre-registration
+        const existingStudent = await Student.findOne({ 
+            $or: [{ studentId }, { email }, { username }] 
+        });
+        
+        if (existingStudent) {
+            return res.status(400).json({ 
+                message: "Student with this ID, email, or username already exists in pre-registration" 
+            });
+        }
+
+        // Check if user already registered in User collection
+        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        if (existingUser) {
+            return res.status(400).json({ 
+                message: "This student already has a registered account" 
+            });
+        }
+
+        const student = new Student({
+            studentId,
+            username,
+            email,
+            gender,
+            mobile,
+            age: parseInt(age),
+            enrollmentYear: parseInt(enrollmentYear),
+            department,
+            isRegistered: false
+        });
+
+        await student.save();
+        
+        res.status(201).json({ 
+            success: true,
+            message: "Student added to pre-registration successfully", 
+            student 
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Admin: Get all pre-registered students
+const getAllPreRegisteredStudents = async (req, res) => {
+    try {
+        const students = await Student.find().sort({ createdAt: -1 });
+        res.status(200).json({ 
+            success: true,
+            data: students 
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Admin: Get unregistered students (students who haven't registered yet)
+const getUnregisteredStudents = async (req, res) => {
+    try {
+        const students = await Student.find({ isRegistered: false }).sort({ createdAt: -1 });
+        res.status(200).json({ 
+            success: true,
+            data: students 
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Admin: Get registered students (students who have created accounts)
+const getRegisteredStudents = async (req, res) => {
+    try {
+        const registeredUsers = await User.find({ role: 'student' }).select('-password');
+        // Optionally, you can join with pre-registration data
+        const studentsWithDetails = await Promise.all(
+            registeredUsers.map(async (user) => {
+                const preRegData = await Student.findOne({ email: user.email });
+                return {
+                    ...user.toObject(),
+                    preRegistrationDetails: preRegData
+                };
+            })
+        );
+        
+        res.status(200).json({ 
+            success: true,
+            data: studentsWithDetails 
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Admin: Delete pre-registered student
+const deletePreRegisteredStudent = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        let student;
+        const isValidObjectId = mongoose.Types.ObjectId.isValid(id);
+        
+        if (isValidObjectId && id.length === 24) {
+            student = await Student.findById(id);
+        } else {
+            student = await Student.findOne({ studentId: id });
+        }
+        
+        if (!student) {
+            return res.status(404).json({ 
+                success: false,
+                message: "Student not found in pre-registration" 
+            });
+        }
+
+        const studentInfo = {
+            studentId: student.studentId,
+            username: student.username,
+            email: student.email,
+            wasRegistered: student.isRegistered
+        };
+        
+        if (student.isRegistered) {
+            await User.findOneAndDelete({ 
+                $or: [
+                    { studentId: student.studentId },
+                    { email: student.email },
+                    { username: student.username }
+                ]
+            });
+        } 
+        
+        await Student.findByIdAndDelete(student._id);
+        
+        res.status(200).json({ 
+            success: true,
+            message: student.isRegistered 
+                ? "Student deleted from pre-registration and user account removed successfully" 
+                : "Pre-registered student deleted successfully",
+            data: studentInfo
+        });
+        
+    } catch (error) {
+        console.error("Delete error:", error);
+        res.status(500).json({ 
+            success: false,
+            message: error.message 
+        });
+    }
+};
+
+// Admin: Update pre-registered student details
+const updatePreRegisteredStudent = async (req, res) => {
+    try {
+        const { studentId, username, email, gender, mobile, age, enrollmentYear, department } = req.body;
+        
+        // Check if already registered
+        const existingUser = await User.findOne({ email });
+        if (existingUser && existingUser.email === email) {
+            return res.status(400).json({ 
+                message: "Cannot update - this student has already registered an account" 
+            });
+        }
+        
+        const student = await Student.findByIdAndUpdate(
+            req.params.id,
+            {
+                studentId,
+                username,
+                email,
+                gender,
+                mobile,
+                age: parseInt(age),
+                enrollmentYear: parseInt(enrollmentYear),
+                department
+            },
+            { new: true, runValidators: true }
+        );
+        
+        if (!student) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+        
+        res.status(200).json({ 
+            success: true,
+            message: "Pre-registered student updated successfully",
+            student 
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+ const verifystudent = async (req, res) => {
+  try {
+    const { studentId, email, mobile } = req.body;
+    
+    const student = await Student.findOne({
+      studentId: studentId,
+      email: email,
+      mobile: mobile,
+      isRegistered: false
+    });
+    
+    if (student) {
+      return res.json({ exists: true, message: "Student verified" });
+    } else {
+      return res.json({ exists: false, message: "Student not found in records" });
+    }
+  } catch (error) {
+    console.error("Verification error:", error);
+    res.status(500).json({ exists: false, message: "Verification failed" });
+  }
+};
+
+const createUser = async (req, res) => {
     try {
         const { title, author, category, publishedyear } = req.body;
         const user = await books.create({
@@ -72,7 +298,6 @@ const login = async (req, res) => {
         res.status(201).json({ message: "user created successfully" });
     } catch (err) {
         res.status(500).json({ message: err });
-
     }
 }
 
@@ -87,29 +312,24 @@ const viewAllbooks = async (req, res) => {
 }
 
 const deletebook = async (req, res) => {
-
     try {
-
         const user = await books.findByIdAndDelete(req.params.id)
         res.status(200).json({ message: "User deleted successfully" })
-
     } catch (error) {
         res.status(500).json({ message: error });
     }
 }
 
 const updatebook = async (req, res) => {
-
     try {
-
         const { title, author, category, publishedyear } = req.body
         const user = await books.findByIdAndUpdate(req.params.id, { title, author, category, publishedyear })
         res.status(200).json({ message: "User updated successfully" })
     } catch (error) {
         res.status(500).json({ message: error });
-
     }
 }
+
 const createData = async (req, res) => {
     try {
         const { name, email, age, course, grade } = req.body;
@@ -119,6 +339,7 @@ const createData = async (req, res) => {
         res.status(500).json({ message: err });
     }
 }
+
 const viewStudentdetails = async (req, res) => {
     try {
         const User = await studentsdata.find();
@@ -130,18 +351,15 @@ const viewStudentdetails = async (req, res) => {
 }
 
 const deletestudentdetails = async (req, res) => {
-
     try {
-
         const user = await studentsdata.findByIdAndDelete(req.params.id)
         res.status(200).json({ message: "User deleted successfully" })
-
     } catch (error) {
         res.status(500).json({ message: error });
     }
 }
-const updatestudents = async (req, res) => {
 
+const updatestudents = async (req, res) => {
     try {
         const { name, email, age, course, grade } = req.body
         const user = await studentsdata.findByIdAndUpdate(req.params.id, {
@@ -150,66 +368,48 @@ const updatestudents = async (req, res) => {
         res.status(200).json({ message: "User updated successfully" })
     } catch (error) {
         res.status(500).json({ message: error });
-
     }
 }
-const users = [
-  { 
-    id: 1,
-    email: 'user@example.com', 
-    passwordHash: '$2b$10$...',
-    resetToken: null, 
-    resetExpires: null 
-},
-{
-    id:"6a1529521b2818fc1eadaaf6",
-    email:"priyakabinaya@gmail.com",
-    passwordHash:"$2b$10$66ScmPacGAQcsQHFLOCfGOVvnZmVL5im36PG6jp5fFpHCjIDlnEz2",
-    resetToken: null,
-    resetExpires: null 
-}
-];
 
 const findUserByEmail = async (email) => {
-  return await User.findOne({ email });
+    return await User.findOne({ email });
 };
 
 const updateUser = async (id, updates) => {
-  return await User.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
+    return await User.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
 };
 
- const profileupdate = async(req,res)=>{
-
-    try{
-
-        const user = await User.findById(req.user.id)
-        .select("-password")
-
+const profileupdate = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select("-password")
         res.status(200).json(user)
-
-    }catch(error){
-
+    } catch (error) {
         res.status(500).json({
-            message:error.message
+            message: error.message
         })
-
     }
-
 }
- 
 
-
-module.exports = { register, 
-    login,  
-     createUser, 
-    viewAllbooks, 
-    deletebook, 
-    updatebook, 
-    createData, 
-    viewStudentdetails, 
-    deletestudentdetails, 
-    updatestudents , 
-    findUserByEmail, 
+module.exports = {
+    register,
+    login,
+    createUser,
+    viewAllbooks,
+    deletebook,
+    updatebook,
+    createData,
+    viewStudentdetails,
+    deletestudentdetails,
+    updatestudents,
+    findUserByEmail,
     updateUser,
-    profileupdate};
-
+    profileupdate,
+  
+    addPreRegisteredStudent,
+    getAllPreRegisteredStudents,
+    getUnregisteredStudents,
+    getRegisteredStudents,
+    deletePreRegisteredStudent,
+    updatePreRegisteredStudent,
+    verifystudent
+};

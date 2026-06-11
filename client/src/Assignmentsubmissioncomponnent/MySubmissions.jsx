@@ -60,25 +60,11 @@ function MySubmissions() {
 
     setDownloadingId(sub._id);
     try {
-      // First, try to fetch the file to see if it exists
-      const response = await axios.get(fullUrl, { responseType: 'blob' });
-      if (response.status === 200) {
-        // Create a blob URL and open in new tab
-        const blob = new Blob([response.data]);
-        const blobUrl = window.URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
-        // Revoke after a short delay to free memory
-        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-      } else {
-        alert('⚠️ File exists but could not be opened.');
-      }
+        window.open(fullUrl, '_blank');
+     
     } catch (error) {
       console.error('Download failed:', error);
-      if (error.response?.status === 404) {
-        alert('❌ File not found on server. The file may have been deleted or the path is incorrect.');
-      } else {
-        alert('❌ Download failed. Check your network connection or server status.');
-      }
+      alert('Failed to open file');
     } finally {
       setDownloadingId(null);
     }

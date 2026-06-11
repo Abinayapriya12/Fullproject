@@ -1,11 +1,9 @@
 const jwt = require('jsonwebtoken');
-
+                         // verify the token
 const verifyToken = (req, res, next) => {
     let token = req.cookies?.token;
     // Check Authorization header if no cookie
     if (!token && req.headers.authorization) {
-        
-
         // Remove 'Bearer ' prefix if present
         const authHeader = req.headers.authorization;
         if (authHeader.startsWith('Bearer ')) {
@@ -26,12 +24,13 @@ const verifyToken = (req, res, next) => {
 
     try {
         
-        const verified = jwt.verify(token, process.env.SECRET_KEY);
+        const verified = jwt.verify(token, process.env.SECRET_KEY,{expiresIn: '30d'}
+);
        
         req.user = verified;
         next();
     } catch (err) {
-        console.error('Token verification error:', err.message); // helpful for debugging
+        console.error('Token verification error:', err.message); // for debugging
         return res.status(401).json({
             success: false,
             message: "Invalid or expired token"

@@ -8,90 +8,104 @@ function AllSubmissions() {
   const [selectedSub, setSelectedSub] = useState(null);
   const [grade, setGrade] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [showGraded, setShowGraded] = useState(false);
 
   useEffect(() => {
-    // Fetch all submissions – if you have a dedicated endpoint like /submissions/all
-    // Otherwise fetch assignments and their submissions.
-    // For simplicity, we assume an endpoint /api/submissions/all exists.
     axios.get('http://localhost:5000/api/allsubmissions')
-      .then(res => {
-        setSubmissions(res.data)
-      })
+      .then(res => setSubmissions(res.data))
       .catch(err => console.error(err));
   }, []);
 
-const handleGrade = async () => {
-  await axios.put(`http://localhost:5000/api/submissions/${selectedSub._id}`, { grade, feedback });
-  setSelectedSub(null);
-  setGrade('');
-  setFeedback('');
-  // Refresh list
-  const { data } = await axios.get('http://localhost:5000/api/allsubmissions');
-  setSubmissions(data);
-};
+  const handleGrade = async () => {
+    await axios.put(`http://localhost:5000/api/submissions/${selectedSub._id}`, { grade, feedback });
+    setSubmissions(prevSubmissions =>
+      prevSubmissions.map(sub =>
+        sub._id === selectedSub._id ? { ...sub, grade, feedback } : sub
+      )
+    );
+    setSelectedSub(null);
+    setGrade('');
+    setFeedback('');
+  };
+
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-7">
       <button
         onClick={() => navigate(-1)}
-        className="absolute top-8 left-8 text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-50"
+        className="absolute top-8 left-8 text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-md"
       >
         ← Back
       </button>
+      
       <div className="max-w-5xl mx-auto pt-10">
         <h1 className="text-4xl font-bold text-gray-800 text-center mb-10">All Submissions</h1>
+        
+        <button 
+          onClick={() => setShowGraded(!showGraded)}
+          className="mb-4 bg-gray-200 px-4 py-2 rounded"
+        >
+          {showGraded ? 'Hide' : 'Show'} Graded
+        </button>
+
         {submissions.length === 0 ? (
           <div className="bg-white rounded-lg shadow-xl p-8 text-center text-gray-500">
             No submissions yet.
           </div>
         ) : (
           <div className="space-y-6">
-            {submissions.map(sub => (
-              <div key={sub._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                <div className="flex justify-between items-start flex-wrap gap-4">
-                  <div>
-                    <p className="font-semibold text-gray-800">
-                      {sub.student ? `${sub.student.name} (${sub.student.email})` : 'Unknown student (deleted account)'}
-                    </p>
-                    <p className="text-sm text-indigo-600">
-                      Assignment: {sub.assignment?.title|| 'Unknown student (deleted account)'}</p>
-                    <p className="text-sm text-gray-500">
-                      Submitted: {new Date(sub.submittedAt).toLocaleString()}</p>
-                    {sub.grade !== undefined && (
-                      <p className="mt-2 text-green-600 font-medium">
-                        Grade: {sub.grade} | Feedback: {sub.feedback}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-3">
-                    {sub.filePath ? (
-                    <a
-                       href={sub.filePath.startsWith('http') ? sub.filePath : `http://localhost:5000/${sub.filePath}`}
-                      download
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      Download
-                    </a>):( <span className="text-gray-400 text-sm">File missing</span>
-                    )}
-                    <button
-                      onClick={() => {
-                        setSelectedSub(sub);
-                        setGrade(sub.grade || '');
-                        setFeedback(sub.feedback || '');
-                      }}
-                      className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition text-sm"
-                    >
-                      Grade
-                    </button>
+            {submissions
+              .filter(sub => showGraded ? true : !sub.grade)
+              .map(sub => (
+                <div key={sub._id} className="bg-white rounded-lg shadow-md p-6">
+                  <div className="flex justify-between items-start flex-wrap gap-4">
+                    <div>
+                      <p className="font-semibold text-gray-800">
+                        {sub.student ? `${sub.student.name} (${sub.student.email})` : 'Unknown student'}
+                      </p>
+                      <p className="text-sm text-indigo-600">
+                        Assignment: {sub.assignment?.title || 'Unknown assignment'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Submitted: {new Date(sub.submittedAt).toLocaleString()}
+                      </p>
+                      {sub.grade && (
+                        <p className="mt-2 text-green-600 font-medium">
+                          Grade: {sub.grade} | Feedback: {sub.feedback}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      {sub.filePath ? (
+                        <a
+                          href={sub.filePath.startsWith('http') ? sub.filePath : `http://localhost:5000/${sub.filePath}`}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          Download
+                        </a>
+                      ) : (
+                        <span className="text-gray-400 text-sm">File missing</span>
+                      )}
+                      <button
+                        onClick={() => {
+                          setSelectedSub(sub);
+                          setGrade(sub.grade || '');
+                          setFeedback(sub.feedback || '');
+                        }}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm"
+                      >
+                        Grade
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         )}
       </div>
 
-      {/* Grading Modal */}
       {selectedSub && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
