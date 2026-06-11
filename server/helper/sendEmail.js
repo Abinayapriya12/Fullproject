@@ -4,9 +4,8 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS
          }
-});
-
-
+});    
+                    // for sending email
 const sendEmail = async (email, otp) => {
   await transporter.sendMail({
     to: email,

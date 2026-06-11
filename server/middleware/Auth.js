@@ -1,11 +1,9 @@
 const jwt = require('jsonwebtoken');
-
+                         // verify the token
 const verifyToken = (req, res, next) => {
     let token = req.cookies?.token;
     // Check Authorization header if no cookie
     if (!token && req.headers.authorization) {
-        
-
         // Remove 'Bearer ' prefix if present
         const authHeader = req.headers.authorization;
         if (authHeader.startsWith('Bearer ')) {

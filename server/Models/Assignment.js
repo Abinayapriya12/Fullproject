@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-// ✅ FIRST, define the attachment schema
 const attachmentSchema = new mongoose.Schema({
   fileName: String,
   fileUrl: String,
@@ -14,26 +13,31 @@ const attachmentSchema = new mongoose.Schema({
 const assignmentSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
+    required: [true, 'Title is required'],
+    trim: true,
   },
   description: {
     type: String,
-    required: true,
+    required: [true, 'Description is required'],
+    trim: true,
   },
   deadline: {
     type: Date,
-    required: true,
+    required: [true, 'Deadline is required'],
   },
   maxMarks: {
     type: Number,
     required: true,
+    default: 100,
+    min: [0, 'Max marks cannot be negative'],
   },
-  trainerId: {
+  // Changed from trainerId to createdBy to match your existing controller
+  createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
-  attachments: [attachmentSchema], // ← Now attachmentSchema is defined!
+  attachments: [attachmentSchema],
   status: {
     type: String,
     enum: ["active", "expired", "draft"],
@@ -43,6 +47,11 @@ const assignmentSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  // Optional: track which students have submitted
+  submissions: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Submission",
+  }],
 });
 
 module.exports = mongoose.model("Assignment", assignmentSchema);

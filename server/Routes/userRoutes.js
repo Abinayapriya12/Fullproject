@@ -14,8 +14,6 @@ const Submission = require('../models/Submission ')
 const getUsers = require('../controller/userController')
 const discussionController =require ('../controller/discussionController');
 
-
-
 // ========== EXISTING AUTH ROUTES ==========
 router.post("/user-register", userController.register)
 router.post("/user-login",userController.login)
@@ -27,6 +25,7 @@ router.get("/unregistered",userController.getUnregisteredStudents);//token
 router.get("/registered",userController.getRegisteredStudents);//token
 router.delete("/deleteregistered/:id",userController.deletePreRegisteredStudent);// token
 router.put("/updatepreregistered/:id",userController.updatePreRegisteredStudent);//token
+
 // ========== BOOK ROUTES ==========
 router.post("/books",verifyToken,userController.createUser)
 router.get("/getbooks",userController.viewAllbooks)
@@ -59,7 +58,6 @@ router.get("/allsubmissions", verifyToken, AssignmentsubmissionController.getAll
 
 router.get('/posts', verifyToken, discussionController.getAllPosts);
 router.get('/posts/:id', verifyToken, discussionController.getPostById);
-
 
 // ========== DISCUSSION FORUM ROUTES ==========
     
@@ -135,3 +133,4 @@ if (discussionController) {
     console.error('controller missing');
 }
 module.exports=router
+   
