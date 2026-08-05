@@ -8,7 +8,7 @@ const secretKey = process.env.SECRET_KEY;
 const nodemailer = require("nodemailer")
 const { sendEmail } = require("../helper/sendEmail")
 const middleware = require('../middleware/Auth')
-const {admin} =require('../middleware/Admin')
+const adminMiddleware = require('../middleware/Admin')
 const mongoose = require('mongoose'); 
 // register function with student pre-registration validation
 
